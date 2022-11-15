@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="healthFlow" doc:id="d131a0bb-b002-4bef-8a16-c7e0500c0fd8" >
+		<http:listener doc:name="GET /ready" doc:id="e2f707ba-7a96-4116-98dd-e22c956685a7" config-ref="HTTP_Listener_config" path="/ready"/>
+		<salesforce:query doc:name="Query" doc:id="341160cd-c392-4ea8-84d8-c5bbb729fa70" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[select id from contact limit 1]]></salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="21cf0c8b-41c2-4740-8146-5f87194f8aff" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/json
+---
+"OK"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd">
+	<flow name="million-s3-to-sfdcFlow" doc:id="9e74fb79-9ee0-4a60-8e49-5afd93dfd2e5" >
+		<s3:new-object-listener doc:name="On New Object from S3" doc:id="09d07c57-e975-4938-a4bf-230174c509ce" config-ref="Amazon_S3_Configuration" bucketName="${aws.s3.bucket}">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</s3:new-object-listener>
+		<logger level="INFO" doc:name="Logger Init" doc:id="3d4fb806-5281-462c-a9e4-cc1bde035748" message='#[output application/json&#10;---&#10;&#10;{&#10;	when: now(),&#10;	where: "After on new Object",&#10;	what: payload&#10;}]'/>
+		<s3:get-object doc:name="Get Object" doc:id="6b5289b8-2d0b-4c70-a814-a73be66c6f82" config-ref="Amazon_S3_Configuration" bucketName="${aws.s3.bucket}" key="#[payload.key]" outputMimeType='application/csv; streaming=true; separator=";"' outputEncoding="UTF-8">
+			<non-repeatable-stream />
+		</s3:get-object>
+		<logger level="INFO" doc:name="Log After" doc:id="4b634212-9948-4907-9c55-9a98b3a1660f" message='#[output application/json&#10;---&#10;&#10;{&#10;	when: now(),&#10;	where: "After Get Object"&#10;}]' />
+		<ee:transform doc:name="Transform Message" doc:id="93aa4e8d-e20f-439d-8dc8-7f9e1c1db544" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/csv lineSeparator='\n', separator = ','
+import * from dw::core::Strings
+var corr = substring(correlationId, 0, 6)
+---
+payload map (item,index) -> 
+{
+	"EmailBouncedReason": corr,
+	"LastName" : item.cognome,
+	"FirstName" : item.nome
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Transf" doc:id="abff80b8-906b-4632-8242-46affadd3684" message='#[output application/json&#10;---&#10;&#10;{&#10;	when: now(),&#10;	where: "After Transf"&#10;}]'/>
+		<salesforce:create-job-bulk-api-v2 doc:name="Create Contacts" doc:id="7fd26323-cd18-4f2e-895d-b01749655e26" config-ref="Salesforce_Config" operation="insert" objectType="Contact">
+		</salesforce:create-job-bulk-api-v2>
+		<logger level="INFO" doc:name="Logger Final" doc:id="d1cf7c76-dda8-47d4-b608-17b3d8e4d717" message='#[output application/json&#10;---&#10;{&#10;	"where" : "after create job bulk",&#10;	"when" : now(),&#10;	body: payload,&#10;	"corr": correlationId&#10;	&#10;}]' />
+	</flow>
+	 
+	
+</mule>

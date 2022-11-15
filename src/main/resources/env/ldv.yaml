@@ -1,0 +1,29 @@
+aws:
+  credential:
+    access: "AKIA6HZREQ2U4TRSDYV2"
+    secret: "![8FGOruXFFvajrI1LqA6GE2bJHSJPN/ROoIkcGl+s/pBytkq3Rc8a88Hr8345u0AZ]"
+    region: "us-east-1"
+    
+  
+  s3:
+    bucket: "inbound-bucket-to-sfdc"
+    
+    
+file:
+  input: "c:/temp/poller1/"
+  archive: "c:/temp/poller1/archive/"
+  
+
+
+# questa è Sandbox LDV    
+      
+  
+sfdc:
+  user: "ldvtesting@webresults.com"
+  pass: "![CCg/RjyVx+ys33pS8hFSIw==]"
+  token: "![oGE/7dBcRadRG0GADo4D+bjoAU2GcURzVcZiC4TWkWA=]"
+  authURL: "https://test.salesforce.com/services/Soap/u/55.0"
+  
+  
+  
+  

@@ -1,0 +1,21 @@
+aws:
+  credential:
+    access: "AKIA6HZREQ2U4TRSDYV2"
+    secret: "![8FGOruXFFvajrI1LqA6GE2bJHSJPN/ROoIkcGl+s/pBytkq3Rc8a88Hr8345u0AZ]"
+    region: "us-east-1"
+    
+  
+  s3:
+    bucket: "inbound-bucket-to-sfdc"
+    
+    
+file:
+  input: "c:/temp/poller1/"
+  archive: "c:/temp/poller1/archive/"
+  
+  
+sfdc:
+  user: "s.bernardini@solution-pde.it"
+  pass: "![hITnELmumrcqmRwNTU+vKw==]"
+  token: "![tEi6ZOCqolM7FbwWZCXJkkyhypXDssaqwfNu2xnkIHc=]"
+  authURL: "https://login.salesforce.com/services/Soap/u/55.0"

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<flow name="get-error-by-id" doc:id="81b18339-7963-41d0-a43d-b6cf97711e12" >
+		<http:listener doc:name="GET /error/{id}" doc:id="a158c137-f374-4f32-9df0-ee70da883e53" config-ref="HTTP_Listener_config" path="/error/{id}" allowedMethods="GET"/>
+		<salesforce:retrieve-job-failed-results-bulk-v2 doc:name="Retrieve job failed results bulk v 2" doc:id="7e7f26fd-aede-452c-aabc-623476a4fdf2" config-ref="Salesforce_Config" id="#[attributes.uriParams.id]"/>
+		<ee:transform doc:name="Transform Message" doc:id="df2c7b57-68ef-4fd7-a5d8-15673b6df73d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-status-by-id" doc:id="185cb7bb-991e-463a-9014-44c99a634c69" >
+		<http:listener doc:name="GET /status/{id]" doc:id="6139c2ae-df93-4244-b9c3-7bc79e98e488" config-ref="HTTP_Listener_config" path="/status/{id}" allowedMethods="GET"/>
+		<salesforce:get-job-state-bulk-api-v2 doc:name="Get job state bulk api v 2" doc:id="287c3ac0-a949-4643-9162-75d76154531e" config-ref="Salesforce_Config" id="#[attributes.uriParams.id]"/>
+		<ee:transform doc:name="Transform Message" doc:id="fec21951-a7c9-41d4-ad28-6e3a2d9c20a5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	
+	<flow name="get-delete-EmailBouncedReason-by-id" doc:id="a379edf6-c605-4fd3-948a-2abdc096c019" >
+		<http:listener doc:name="GET /delete1000/{id}" doc:id="d958660a-98e0-40e3-a501-0105e0744227" config-ref="HTTP_Listener_config" path="/delete1000/{id}" allowedMethods="GET"/>
+		<salesforce:query doc:name="Query" doc:id="7e9abb3b-350e-40ce-9365-060226aa9d0d" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[select id from Contact
+where EmailBouncedReason = ':id'
+limit 1000]]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"id" : attributes.uriParams.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<salesforce:create-job-bulk-api-v2 objectType="Contact" doc:name="Create job bulk api v 2" doc:id="1fe4a9d8-6673-41e3-bbc5-39016ff60428" config-ref="Salesforce_Config" operation="delete">
+			<salesforce:s-objects ><![CDATA[#[output application/csv separator=',' ,lineSeparator='\n'
+---
+
+payload map (item, index) -> 
+{
+	Id: item.Id
+}]]]></salesforce:s-objects>
+		</salesforce:create-job-bulk-api-v2>
+		<ee:transform doc:name="Transform Message" doc:id="00a64aa9-be19-4122-833e-731a69bb1216" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload ++ {"url": "http://localhost:8081/status/" ++ (payload.id default "") }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	
+	
+	
+	
+	<flow name="get-delete-job-EmailBouncedReason-by-id" doc:id="a2fffa40-5dc4-4d74-9d61-a7f9252f02ac" >
+		<http:listener doc:name="GET /delete/{id}" doc:id="10dc4922-2c2c-4c73-b4df-d94deea639d6" config-ref="HTTP_Listener_config" path="/delete/{id}" allowedMethods="GET"/>
+		<salesforce:create-query-job-bulk-api-v2 doc:name="Create query job bulk api v 2" doc:id="c24817e5-d070-40e7-b844-fd5d9123c2cd" config-ref="Salesforce_Config" query="#[&quot;select id from Contact where EmailBouncedReason = '&quot; ++ attributes.uriParams.id ++ &quot;'&quot;]" lineEnding="LF"/>
+		<set-variable value="#[payload.id]" doc:name="Set Variable" doc:id="33ce9fc1-a1a0-4ae6-9675-1a866e165a86" variableName="id"/>
+		<logger level="INFO" doc:name="Logger" doc:id="6221a09a-674c-41ae-ab18-8d31274837ee" message='#[output application/json&#10;---&#10;{&#10;	what: "after create",&#10;	body: payload&#10;}]'/>
+		<until-successful maxRetries="50" doc:name="Until Successful" doc:id="484023c1-7cff-46ee-9cb3-f397cafd18fd" millisBetweenRetries="10000">
+			<salesforce:get-query-job-info-bulk-api-v2 doc:name="Get query job info bulk api v 2" doc:id="bb668b5f-2268-4ac9-9b47-2600de775f25" config-ref="Salesforce_Config" id="#[vars.id]" />
+			<logger level="INFO" doc:name="Logger" doc:id="26525caf-0d75-4ec9-877d-bba9c3c03d7e" message='#[output application/json&#10;---&#10;{&#10;	what: "after info",&#10;	body: payload&#10;}]' />
+			<choice doc:name="Choice" doc:id="81eb9856-6947-4c66-8faa-1aedd9943adf">
+			<when expression='#[payload.state == "JobComplete"]' >
+					<logger level="INFO" doc:name="Logger" doc:id="069a2133-6d5a-45ce-84f7-54d50edc4ae9" message='#["JobComplete"]'/>
+				</when>
+			<otherwise>
+				<raise-error doc:name="Raise error" doc:id="9faf5200-8b3f-47c4-98f4-a67e258a9a52" type="CUSTOM:RETRY" description="Job non ancora terminato" />
+			</otherwise>
+		</choice>
+		</until-successful>
+		<salesforce:get-query-job-results-bulk-api-v2 doc:name="Get query job results bulk api v 2" doc:id="19f687c1-f8ab-4fb1-a728-bb9e518f397e" config-ref="Salesforce_Config" id="#[vars.id]"/>
+				<logger level="INFO" doc:name="Logger after Get Query Job" doc:id="4d99b137-cdf1-4eef-bbdd-396a774f8280" message='#[output application/json&#10;---&#10;{&#10;	what: "after Get Query Job"&#10;}]'/>
+		<salesforce:create-job-bulk-api-v2 doc:name="Create job bulk api v 2 delete" doc:id="5e59fc91-e26b-42c0-885a-66ef8b2347ec" config-ref="Salesforce_Config" objectType="Contact" operation="delete">
+			<salesforce:s-objects ><![CDATA[#[output application/csv lineSeparator='\n' ,separator=','
+---
+payload map ((item,index ) -> {
+	"Id": item.Id
+})]]]></salesforce:s-objects>
+		</salesforce:create-job-bulk-api-v2>
+		<ee:transform doc:name="Transform Message" doc:id="71921c7f-2c0c-43d0-b9de-7dbbb3e102f1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log End" doc:id="dba7a540-ced6-41d4-b0c7-b3a21ebb6b17" message='#[output application/json&#10;---&#10;{&#10;	what: "End",&#10;	body : payload&#10;}]' />
+	
+</flow>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	</mule>
